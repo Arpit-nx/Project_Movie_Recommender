@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="header-container">
+            <h1>Movie Recommender</h1>
+            <p>Find your next favorite movie!</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Movie Search Section -->
+        <div class="search-box">
+            <input type="text" id="movie-search" placeholder="Search for a movie...">
+            <button id="search-button">Search</button>
+        </div>
+
+        <h2>Recommended Genres for You</h2>
+        <div class="genres">
+            <button class="genre" data-genre="action">Action</button>
+            <button class="genre" data-genre="comedy">Comedy</button>
+            <button class="genre" data-genre="drama">Drama</button>
+            <button class="genre" data-genre="sci-fi">Sci-Fi</button>
+            <button class="genre" data-genre="romance">Romance</button>
+        </div>
+
+        <!-- Mood Search Section -->
+        <h2 class="mood-search-header">Search by Mood</h2>
+        <form action="{% url 'mood_recommendations' %}" method="POST" id="mood-form">
+            {% csrf_token %}
+            <input type="text" id="mood-search" name="mood" placeholder="Enter mood (e.g., happy, sad)">
+            <button type="submit" id="mood-search-button">Search</button>
+        </form>
+
+        <div id="movie-results"></div>
+    </div>
+
+    <div id="movie-modal" class="modal">
+        <div id="modal-content" class="modal-content"></div>
+    </div>  
+
+    <!-- Feedback Button Section -->
+    <div class="feedback-section">
+        <a href="{% url 'feedback' %}" class="feedback-button">Give Feedback</a>
+    </div>
+
+    <!-- Footer Section -->
+    <footer>
+        <div class="footer-container">
+            <p>&copy; 2025 Movie Recommender. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'script.js' %}?v=1.0"></script>
+</body>
+</html>
