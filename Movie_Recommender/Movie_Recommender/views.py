@@ -2,41 +2,303 @@ import os
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 import requests
+import json
 from .models import Feedback
 from .utils import get_movie_suggestions_from_mood, get_enhanced_movie_suggestions_from_mood
-import json
+from .supabase_client import supabase
 
 # Home page view
 def Home(request):
     return render(request, 'index.html')
 
-# Feedback submission view
+# Authentication views
+@csrf_exempt
+@require_http_methods(["POST"])
+def signup(request):
+    """
+    Handle user registration with Supabase Auth
+    """
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        password = data.get('password')
+        full_name = data.get('full_name', '')
+        username = data.get('username', '')
+
+        if not email or not password:
+            return JsonResponse({'error': 'Email and password are required'}, status=400)
+
+        # Sign up user with Supabase
+        response = supabase.auth.sign_up({
+            "email": email,
+            "password": password,
+            "options": {
+                "data": {
+                    "full_name": full_name,
+                    "username": username
+                }
+            }
+        })
+
+        if response.user:
+            return JsonResponse({
+                'message': 'Registration successful! Please check your email for verification.',
+                'user': {
+                    'id': response.user.id,
+                    'email': response.user.email
+                }
+            })
+        else:
+            return JsonResponse({'error': 'Registration failed'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def signin(request):
+    """
+    Handle user login with Supabase Auth
+    """
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return JsonResponse({'error': 'Email and password are required'}, status=400)
+
+        # Sign in user with Supabase
+        response = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+
+        if response.user:
+            return JsonResponse({
+                'message': 'Login successful!',
+                'user': {
+                    'id': response.user.id,
+                    'email': response.user.email
+                },
+                'session': {
+                    'access_token': response.session.access_token,
+                    'refresh_token': response.session.refresh_token
+                }
+            })
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def signout(request):
+    """
+    Handle user logout
+    """
+    try:
+        supabase.auth.sign_out()
+        return JsonResponse({'message': 'Logout successful!'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_user_profile(request):
+    """
+    Get user profile information
+    """
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return JsonResponse({'error': 'Authorization header required'}, status=401)
+
+        token = auth_header.replace('Bearer ', '')
+        
+        # Get user from token
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+
+        user_id = user_response.user.id
+
+        # Get profile data
+        profile_response = supabase.table('profiles').select('*').eq('id', user_id).execute()
+        
+        profile = profile_response.data[0] if profile_response.data else None
+
+        return JsonResponse({
+            'user': {
+                'id': user_response.user.id,
+                'email': user_response.user.email,
+                'profile': profile
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Enhanced feedback submission with Supabase
+@csrf_exempt
 def feedback(request):
     """
-    Handles feedback form submission and saves feedback to the database.
+    Handles feedback form submission and saves feedback to Supabase.
     """
     if request.method == 'POST':
-        # Retrieve form data
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        message = request.POST.get('message')
+        try:
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+            else:
+                data = request.POST
 
-        # Save the feedback to the database
-        feedback_entry = Feedback(name=name, email=email, message=message)
-        feedback_entry.save()
+            name = data.get('name')
+            email = data.get('email')
+            message = data.get('message')
+            rating = int(data.get('rating', 5))
 
-        # Handle AJAX requests
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({"message": "Feedback submitted successfully!"}, status=200)
+            if not all([name, email, message]):
+                return JsonResponse({'error': 'All fields are required'}, status=400)
 
-        # Redirect back to the feedback page after successful submission
-        return redirect('feedback')
+            # Get user ID if authenticated
+            user_id = None
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                try:
+                    token = auth_header.replace('Bearer ', '')
+                    user_response = supabase.auth.get_user(token)
+                    if user_response.user:
+                        user_id = user_response.user.id
+                except:
+                    pass  # Continue as anonymous user
+
+            # Save feedback to Supabase
+            feedback_data = {
+                'name': name,
+                'email': email,
+                'message': message,
+                'rating': rating,
+                'user_id': user_id
+            }
+
+            response = supabase.table('feedback').insert(feedback_data).execute()
+
+            if response.data:
+                return JsonResponse({
+                    'message': 'Feedback submitted successfully!',
+                    'feedback_id': response.data[0]['id']
+                })
+            else:
+                return JsonResponse({'error': 'Failed to submit feedback'}, status=500)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
     # Render the feedback page for GET requests
     return render(request, 'feedback.html')
 
-# Mood-based movie recommendations view
+# Track user movie interactions
+@csrf_exempt
+@require_http_methods(["POST"])
+def track_movie_interaction(request):
+    """
+    Track user interactions with movies (viewed, liked, watchlist)
+    """
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return JsonResponse({'error': 'Authentication required'}, status=401)
+
+        token = auth_header.replace('Bearer ', '')
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+
+        data = json.loads(request.body)
+        movie_title = data.get('movie_title')
+        imdb_id = data.get('imdb_id')
+        interaction_type = data.get('interaction_type')  # 'viewed', 'liked', 'watchlist'
+        mood_context = data.get('mood_context', '')
+
+        if not all([movie_title, interaction_type]):
+            return JsonResponse({'error': 'Movie title and interaction type are required'}, status=400)
+
+        # Check if interaction already exists
+        existing = supabase.table('user_movie_interactions').select('*').eq('user_id', user_response.user.id).eq('movie_title', movie_title).eq('interaction_type', interaction_type).execute()
+
+        if existing.data:
+            return JsonResponse({'message': 'Interaction already recorded'})
+
+        # Insert new interaction
+        interaction_data = {
+            'user_id': user_response.user.id,
+            'movie_title': movie_title,
+            'imdb_id': imdb_id,
+            'interaction_type': interaction_type,
+            'mood_context': mood_context
+        }
+
+        response = supabase.table('user_movie_interactions').insert(interaction_data).execute()
+
+        if response.data:
+            return JsonResponse({'message': 'Interaction tracked successfully'})
+        else:
+            return JsonResponse({'error': 'Failed to track interaction'}, status=500)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Get user's movie history and recommendations
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_user_recommendations(request):
+    """
+    Get personalized recommendations based on user's movie history
+    """
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return JsonResponse({'error': 'Authentication required'}, status=401)
+
+        token = auth_header.replace('Bearer ', '')
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+
+        # Get user's movie interactions
+        interactions = supabase.table('user_movie_interactions').select('*').eq('user_id', user_response.user.id).order('created_at', desc=True).limit(20).execute()
+
+        # Get user's liked movies for better recommendations
+        liked_movies = [interaction['movie_title'] for interaction in interactions.data if interaction['interaction_type'] == 'liked']
+        
+        # Generate personalized recommendations based on liked movies
+        if liked_movies:
+            # Use AI to generate recommendations based on user's preferences
+            prompt = f"Based on these movies the user liked: {', '.join(liked_movies[:5])}, recommend 8 similar movies they might enjoy."
+            try:
+                from .utils import get_enhanced_movie_suggestions_from_mood
+                recommendations = get_enhanced_movie_suggestions_from_mood(f"movies similar to {', '.join(liked_movies[:3])}")
+            except:
+                recommendations = ["The Shawshank Redemption", "The Godfather", "Pulp Fiction", "The Dark Knight", "Forrest Gump", "Inception", "The Matrix", "Goodfellas"]
+        else:
+            # Default popular recommendations for new users
+            recommendations = ["The Shawshank Redemption", "The Godfather", "Pulp Fiction", "The Dark Knight", "Forrest Gump", "Inception", "The Matrix", "Goodfellas"]
+
+        return JsonResponse({
+            'recommendations': recommendations,
+            'user_history': interactions.data,
+            'liked_count': len(liked_movies)
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Mood-based movie recommendations view (enhanced with user tracking)
 def mood_recommendations(request):
     """
     Handles mood input and provides movie recommendations based on AI suggestions.
@@ -56,6 +318,27 @@ def mood_recommendations(request):
             # Check if AI provided recommendations
             if not ai_response:
                 return HttpResponse('No recommendations available for the provided mood.', status=404)
+
+            # Track mood search if user is authenticated
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                try:
+                    token = auth_header.replace('Bearer ', '')
+                    user_response = supabase.auth.get_user(token)
+                    if user_response.user:
+                        # Track each recommended movie as viewed with mood context
+                        for movie in ai_response[:3]:  # Track first 3 recommendations
+                            try:
+                                supabase.table('user_movie_interactions').insert({
+                                    'user_id': user_response.user.id,
+                                    'movie_title': movie,
+                                    'interaction_type': 'viewed',
+                                    'mood_context': mood
+                                }).execute()
+                            except:
+                                pass  # Continue if tracking fails
+                except:
+                    pass  # Continue as anonymous user
 
             # Render the movie cards HTML with the recommendations
             movie_cards_html = render_enhanced_movie_cards(ai_response)
@@ -147,6 +430,10 @@ def render_enhanced_movie_cards(movies):
                 <div class="movie-overlay">
                     <div class="movie-rating">⭐ {movie_details['rating']}</div>
                 </div>
+                <div class="movie-actions">
+                    <button class="action-btn like-btn" data-movie="{movie_details['title']}" data-imdb="{movie_details['imdbID']}">❤️</button>
+                    <button class="action-btn watchlist-btn" data-movie="{movie_details['title']}" data-imdb="{movie_details['imdbID']}">📋</button>
+                </div>
             </div>
             <div class="enhanced-movie-info">
                 <h3 class="enhanced-movie-title">{movie_details['title']}</h3>
@@ -212,6 +499,23 @@ def get_movie_details_api(request, imdb_id):
         if data.get('Response') == 'True':
             streaming_links = get_streaming_links(data.get('Title', ''), imdb_id)
             data['streaming_links'] = streaming_links
+            
+            # Track movie view if user is authenticated
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                try:
+                    token = auth_header.replace('Bearer ', '')
+                    user_response = supabase.auth.get_user(token)
+                    if user_response.user:
+                        supabase.table('user_movie_interactions').insert({
+                            'user_id': user_response.user.id,
+                            'movie_title': data.get('Title', ''),
+                            'imdb_id': imdb_id,
+                            'interaction_type': 'viewed'
+                        }).execute()
+                except:
+                    pass  # Continue if tracking fails
+            
             return JsonResponse(data)
         else:
             return JsonResponse({'error': 'Movie not found'}, status=404)

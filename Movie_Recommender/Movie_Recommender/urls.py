@@ -26,4 +26,14 @@ urlpatterns = [
     path('trending-movies/', views.get_trending_movies, name='trending_movies'),
     path('recent-movies/', views.get_recent_movies, name='recent_movies'),
     path('movie-details/<str:imdb_id>/', views.get_movie_details_api, name='movie_details_api'),
+    
+    # Authentication endpoints
+    path('api/auth/signup/', views.signup, name='signup'),
+    path('api/auth/signin/', views.signin, name='signin'),
+    path('api/auth/signout/', views.signout, name='signout'),
+    path('api/auth/profile/', views.get_user_profile, name='user_profile'),
+    
+    # User interaction endpoints
+    path('api/movies/track/', views.track_movie_interaction, name='track_movie'),
+    path('api/user/recommendations/', views.get_user_recommendations, name='user_recommendations'),
 ]
