@@ -7,8 +7,8 @@ body, h1, p, form, input, textarea, button {
 
 /* Body Styling */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #0e0606;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #333;
     display: flex;
     justify-content: center;
@@ -19,62 +19,72 @@ body {
 
 /* Form Container */
 .form-container {
-    background: rgb(147, 127, 127);
-    padding: 20px 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     max-width: 500px;
     width: 100%;
     text-align: center;
+    backdrop-filter: blur(10px);
 }
 
 /* Heading and Paragraphs in Form */
 .form-container h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 700;
 }
 
 .form-container p {
-    font-size: 16px;
+    font-size: 1.1rem;
     margin-bottom: 20px;
+    color: #666;
 }
 
 /* Form Elements */
 form label {
     display: block;
     text-align: left;
-    margin-bottom: 5px;
-    font-weight: bold;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
 }
 
 form input, form textarea, form button {
     width: 100%;
     margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
     font-size: 16px;
+    transition: all 0.3s ease;
 }
 
 /* Focus on Inputs and Textareas */
 form input:focus, form textarea:focus {
-    border-color: #007BFF;
+    border-color: #667eea;
     outline: none;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
 }
 
 /* Submit Button Styling */
 form button {
-    background-color: #007BFF;
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: #fff;
     border: none;
     cursor: pointer;
     font-size: 18px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 form button:hover {
-    background-color: #0056b3;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
 }
 
 /* Feedback Form - Custom Styling for Fields */
@@ -98,11 +108,12 @@ form textarea {
 
 /* Success or Submission Confirmation */
 .sub-form-container {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
     color: white;
-    background-color: rgb(10, 6, 6);
-    padding: 10px;
-    border-radius: 8px;
+    padding: 20px;
+    border-radius: 15px;
     margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
 }
 
 /* Error or Validation Messages */
@@ -115,10 +126,16 @@ form textarea {
 /* Adjustments for Mobile Responsiveness */
 @media (max-width: 768px) {
     .form-container {
-        padding: 15px;
+        padding: 30px 20px;
+        margin: 20px;
     }
 
     form input, form textarea, form button {
-        font-size: 14px;
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    .form-container h1 {
+        font-size: 1.8rem;
     }
 }

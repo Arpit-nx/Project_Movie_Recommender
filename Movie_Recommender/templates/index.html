@@ -4,61 +4,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Recommender</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <title>Movie Recommender - Find Your Perfect Movie</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=2.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Header Section -->
     <header>
         <div class="header-container">
-            <h1>Movie Recommender</h1>
-            <p>Find your next favorite movie!</p>
+            <h1>🎬 Movie Recommender</h1>
+            <p>Discover your next favorite movie with AI-powered recommendations!</p>
         </div>
     </header>
 
     <div class="container">
-        <!-- Movie Search Section -->
-        <div class="search-box">
-            <input type="text" id="movie-search" placeholder="Search for a movie...">
-            <button id="search-button">Search</button>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="trending">🔥 Trending</button>
+            <button class="nav-tab" data-tab="recent">🆕 Recent Releases</button>
+            <button class="nav-tab" data-tab="search">🔍 Search</button>
+            <button class="nav-tab" data-tab="mood">🎭 Mood Based</button>
         </div>
 
-        <h2>Recommended Genres for You</h2>
-        <div class="genres">
-            <button class="genre" data-genre="action">Action</button>
-            <button class="genre" data-genre="comedy">Comedy</button>
-            <button class="genre" data-genre="drama">Drama</button>
-            <button class="genre" data-genre="sci-fi">Sci-Fi</button>
-            <button class="genre" data-genre="romance">Romance</button>
+        <!-- Trending Movies Tab -->
+        <div id="trending" class="tab-content active">
+            <h2 class="section-title">🔥 Trending Movies</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                Discover the most popular movies everyone's talking about
+            </p>
         </div>
 
-        <!-- Mood Search Section -->
-        <h2 class="mood-search-header">Search by Mood</h2>
-        <form action="{% url 'mood_recommendations' %}" method="POST" id="mood-form">
-            {% csrf_token %}
-            <input type="text" id="mood-search" name="mood" placeholder="Enter mood (e.g., happy, sad)">
-            <button type="submit" id="mood-search-button">Search</button>
-        </form>
+        <!-- Recent Movies Tab -->
+        <div id="recent" class="tab-content">
+            <h2 class="section-title">🆕 Recently Released</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                Check out the latest movies that just hit the screens
+            </p>
+        </div>
 
+        <!-- Search Tab -->
+        <div id="search" class="tab-content">
+            <div class="search-section">
+                <h2 class="section-title">🔍 Search Movies</h2>
+                <div class="search-box">
+                    <input type="text" id="movie-search" placeholder="Search for any movie...">
+                    <button id="search-button">Search</button>
+                </div>
+            </div>
+
+            <div class="genres-section">
+                <h2>Browse by Genre</h2>
+                <div class="genres">
+                    <button class="genre" data-genre="action">🎬 Action</button>
+                    <button class="genre" data-genre="comedy">😂 Comedy</button>
+                    <button class="genre" data-genre="drama">🎭 Drama</button>
+                    <button class="genre" data-genre="sci-fi">🚀 Sci-Fi</button>
+                    <button class="genre" data-genre="romance">💕 Romance</button>
+                    <button class="genre" data-genre="horror">👻 Horror</button>
+                    <button class="genre" data-genre="thriller">⚡ Thriller</button>
+                    <button class="genre" data-genre="animation">🎨 Animation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood Based Tab -->
+        <div id="mood" class="tab-content">
+            <div class="mood-section">
+                <h2>🎭 Find Movies Based on Your Mood</h2>
+                <p>Tell us how you're feeling, and our AI will recommend the perfect movies for you!</p>
+                
+                <form id="mood-form" method="POST" action="{% url 'mood_recommendations' %}">
+                    {% csrf_token %}
+                    <input type="text" id="mood-search" name="mood" placeholder="e.g., happy, sad, excited, romantic, adventurous...">
+                    <button type="submit" id="mood-search-button" class="mood-search-button">Get Recommendations</button>
+                </form>
+
+                <div class="mood-suggestions">
+                    <div class="mood-suggestion">😊 Happy</div>
+                    <div class="mood-suggestion">😢 Sad</div>
+                    <div class="mood-suggestion">😍 Romantic</div>
+                    <div class="mood-suggestion">😱 Scared</div>
+                    <div class="mood-suggestion">🤔 Thoughtful</div>
+                    <div class="mood-suggestion">🎉 Excited</div>
+                    <div class="mood-suggestion">😌 Relaxed</div>
+                    <div class="mood-suggestion">🏃 Adventurous</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie Results Container -->
         <div id="movie-results"></div>
     </div>
 
+    <!-- Enhanced Movie Modal -->
     <div id="movie-modal" class="modal">
         <div id="modal-content" class="modal-content"></div>
     </div>  
 
     <!-- Feedback Button Section -->
     <div class="feedback-section">
-        <a href="{% url 'feedback' %}" class="feedback-button">Give Feedback</a>
+        <a href="{% url 'feedback' %}" class="feedback-button">💬 Give Feedback</a>
     </div>
 
     <!-- Footer Section -->
     <footer>
         <div class="footer-container">
-            <p>&copy; 2025 Movie Recommender. All rights reserved.</p>
+            <p>&copy; 2025 Movie Recommender. Powered by AI for the perfect movie experience. All rights reserved.</p>
         </div>
     </footer>
 
-    <script src="{% static 'script.js' %}?v=1.0"></script>
+    <script src="{% static 'script.js' %}?v=2.0"></script>
 </body>
 </html>

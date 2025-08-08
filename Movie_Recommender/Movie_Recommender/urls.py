@@ -23,4 +23,7 @@ urlpatterns = [
     path('', views.Home, name='home'),
     path('feedback/', views.feedback, name='feedback'),
     path('mood-recommendations/', views.mood_recommendations, name='mood_recommendations'),
+    path('trending-movies/', views.get_trending_movies, name='trending_movies'),
+    path('recent-movies/', views.get_recent_movies, name='recent_movies'),
+    path('movie-details/<str:imdb_id>/', views.get_movie_details_api, name='movie_details_api'),
 ]
